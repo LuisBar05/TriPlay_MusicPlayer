@@ -1,21 +1,16 @@
 package MusicPlayer;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.Serializable;
+import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageInputStream;
+import org.jaudiotagger.tag.images.Artwork;
 
 public class SongMetadata implements Serializable {
 
-    private int idSong;
     private String fileName, songTitle, albumName, artistName;
-    private BufferedImage cover;
-
-    public void setidSong(int idSong) {
-        this.idSong = idSong;
-    }
-
-    public int getIdSong() {
-        return idSong;
-    }
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
@@ -48,5 +43,4 @@ public class SongMetadata implements Serializable {
     public String getArtistName() {
         return artistName;
     }
-
 }

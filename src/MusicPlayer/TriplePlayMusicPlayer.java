@@ -1,14 +1,20 @@
 package MusicPlayer;
 
 import java.awt.BorderLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.embed.swing.JFXPanel;
 import javafx.stage.Stage;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JMenu;
@@ -16,11 +22,15 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import org.jaudiotagger.tag.images.Artwork;
 
 public class TriplePlayMusicPlayer extends javax.swing.JFrame {
 
     static LinkedList<SongMetadata> songsList;
     static String[] myFileNames;
+    static Artwork myCover;
+    static FieldGetter songInfo;
+    static BufferedImage noCover;
 
     public TriplePlayMusicPlayer() {
         initComponents();
@@ -55,7 +65,7 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
                     SongMetadata addedSong = new SongMetadata();
 
                     try {
-                        FieldGetter songInfo = new FieldGetter(newSong);
+                        songInfo = new FieldGetter(newSong);
                         addedSong.setSongTitle(songInfo.getTitle());
                         addedSong.setArtistName(songInfo.getArtist());
                         addedSong.setAlbumName(songInfo.getAlbum());
@@ -110,6 +120,37 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
                             jLabel5.setText(songsList.get(i).getSongTitle());
                             jLabel11.setText(songsList.get(i).getArtistName());
                             jLabel12.setText(songsList.get(i).getAlbumName());
+                            try {
+                                songInfo = new FieldGetter(new File("src//tunes//".concat(selected)));
+                            } catch (CannotReadFile ex) {
+                                Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            myCover = songInfo.getArtwork();
+                            ImageCover albumCover = new ImageCover(jPanel5);
+                            BufferedImage thatCover;
+                            if (myCover != null) {
+                                try {
+                                    thatCover = albumCover.getImage(myCover);
+                                    albumCover.setImage(thatCover);
+                                } catch (CannotReadFile ex) {
+                                    Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
+                                } catch (IOException ex) {
+                                    Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            } else {
+                                try {
+                                    File noteCover = new File("src//icons//no_cover.jpg");
+                                    thatCover = ImageIO.read(noteCover);
+                                    albumCover.setImage(thatCover);
+                                } catch (IOException ex) {
+                                    Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
+                                }
+                            }
+
+                            jPanel5.removeAll();
+                            jPanel5.add(albumCover);
+                            jPanel5.repaint();
+
                         }
                     }
 

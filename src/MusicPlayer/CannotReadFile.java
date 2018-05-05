@@ -5,6 +5,8 @@
  */
 package MusicPlayer;
 
+import java.io.IOException;
+
 /**
  *
  * @author Luis
@@ -12,6 +14,10 @@ package MusicPlayer;
 class CannotReadFile extends Exception {
 
     CannotReadFile(String localizedMessage) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    CannotReadFile(IOException ex) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
