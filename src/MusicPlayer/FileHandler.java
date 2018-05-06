@@ -42,7 +42,8 @@ public class FileHandler {
         }
     }
 
-    public static void copyFile(File newSong) {
+    // Se implementó al principio queriendo mantener los archivos agregados en una sola carpeta
+    /*public static void copyFile(File newSong) {
         try {
             Path originPath = Paths.get(newSong.getPath());
             Path destinyPath = Paths.get("src\\tunes\\".concat(newSong.getName()));
@@ -50,8 +51,7 @@ public class FileHandler {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
+    }*/
     public LinkedList readFile() {
         LinkedList<SongMetadata> songsList = null;
         try {
@@ -81,14 +81,6 @@ public class FileHandler {
             fnfe.printStackTrace();
         } catch (IOException ex) {
             Logger.getLogger(FileHandler.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private void loadSongs() {
-        File file = new File("src//tunes//");
-        File[] myTunes = file.listFiles();
-        for (File f : myTunes) {
-            System.out.println(f.getName());
         }
     }
 

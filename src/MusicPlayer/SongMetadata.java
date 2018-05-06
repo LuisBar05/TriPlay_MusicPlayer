@@ -1,16 +1,18 @@
 package MusicPlayer;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.Serializable;
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageInputStream;
-import org.jaudiotagger.tag.images.Artwork;
 
 public class SongMetadata implements Serializable {
 
-    private String fileName, songTitle, albumName, artistName;
+    private String fileURL, fileName, songTitle, albumName, artistName;
+
+    public void setFileURL(String fileURL) {
+        this.fileURL = fileURL;
+    }
+
+    public String getFileURL() {
+        return fileURL;
+    }
 
     public void setFileName(String fileName) {
         this.fileName = fileName;

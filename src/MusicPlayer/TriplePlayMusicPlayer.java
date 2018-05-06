@@ -1,13 +1,13 @@
 package MusicPlayer;
 
 import java.awt.BorderLayout;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,9 +31,15 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
     static Artwork myCover;
     static FieldGetter songInfo;
     static BufferedImage noCover;
+    static SoundControlPlayerHandler myControlPlayer;
+    static File noteCover = new File("src//icons//no_cover.jpg");
+    static ImageCover albumCover;
+    static BufferedImage songFile;
 
     public TriplePlayMusicPlayer() {
         initComponents();
+        JFXPanel fxPanel = new JFXPanel();
+        albumCover = new ImageCover(jPanel5);
         FileHandler mySongsFile = new FileHandler("songs_list.dat");
 
         if (mySongsFile.getIsNull()) {
@@ -51,8 +57,8 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         }
 
         menuBar = new JMenuBar();
-        JMenu menu = new JMenu("Opciones...");
-        JMenuItem addItem = new JMenuItem("Añadir archivo a la Lista de Reproducción");
+        JMenu menu = new JMenu("Options...");
+        JMenuItem addItem = new JMenuItem("Add File to Playlist");
         addItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -61,11 +67,12 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
 
                 if (isSelected == JFileChooser.APPROVE_OPTION) {
                     File newSong = fc.getSelectedFile();
-                    FileHandler.copyFile(newSong);
+                    //FileHandler.copyFile(newSong);
                     SongMetadata addedSong = new SongMetadata();
 
                     try {
                         songInfo = new FieldGetter(newSong);
+                        addedSong.setFileURL(newSong.getPath());
                         addedSong.setSongTitle(songInfo.getTitle());
                         addedSong.setArtistName(songInfo.getArtist());
                         addedSong.setAlbumName(songInfo.getAlbum());
@@ -91,7 +98,7 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
             }
         });
 
-        JMenuItem exitItem = new JMenuItem("Cerrar");
+        JMenuItem exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
@@ -103,9 +110,8 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         menu.add(exitItem);
         menuBar.add(menu);
 
-        JFXPanel fxPanel = new JFXPanel();
-
-        SoundControlPlayerHandler myControlPlayer = new SoundControlPlayerHandler(jToggleButton1);
+        myControlPlayer = new SoundControlPlayerHandler(jToggleButton1);
+        myControlPlayer.setNotSelected(jList2);
         jList2.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent lse) {
@@ -113,25 +119,24 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
                     JList source = (JList) lse.getSource();
                     String selected = source.getSelectedValue().toString();
                     System.out.println(selected);
-                    myControlPlayer.setMediaControls(selected);
-                    myControlPlayer.getMediaPlayer().play();
                     for (int i = 0; i < songsList.size(); i++) {
                         if (selected.equals(songsList.get(i).getFileName())) {
+                            myControlPlayer.setMediaControls(songsList.get(i).getFileURL());
+                            myControlPlayer.getMediaPlayer().play();
+
                             jLabel5.setText(songsList.get(i).getSongTitle());
                             jLabel11.setText(songsList.get(i).getArtistName());
                             jLabel12.setText(songsList.get(i).getAlbumName());
                             try {
-                                songInfo = new FieldGetter(new File("src//tunes//".concat(selected)));
+                                songInfo = new FieldGetter(new File(songsList.get(i).getFileURL()));
                             } catch (CannotReadFile ex) {
                                 Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
                             }
                             myCover = songInfo.getArtwork();
-                            ImageCover albumCover = new ImageCover(jPanel5);
-                            BufferedImage thatCover;
                             if (myCover != null) {
                                 try {
-                                    thatCover = albumCover.getImage(myCover);
-                                    albumCover.setImage(thatCover);
+                                    songFile = albumCover.getImage(myCover);
+                                    albumCover.setImage(songFile);
                                 } catch (CannotReadFile ex) {
                                     Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
                                 } catch (IOException ex) {
@@ -139,14 +144,14 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
                                 }
                             } else {
                                 try {
-                                    File noteCover = new File("src//icons//no_cover.jpg");
-                                    thatCover = ImageIO.read(noteCover);
-                                    albumCover.setImage(thatCover);
+                                    songFile = ImageIO.read(noteCover);
+                                    albumCover.setImage(songFile);
                                 } catch (IOException ex) {
                                     Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
                                 }
                             }
-
+                            jToggleButton1.setSelected(true);
+                            jToggleButton1.setSelectedIcon(new ImageIcon("src//icons/pause.png"));
                             jPanel5.removeAll();
                             jPanel5.add(albumCover);
                             jPanel5.repaint();
@@ -161,27 +166,66 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         jButton1.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
+                int selected = jList2.getSelectedIndex();
+                jList2.setSelectedIndex(selected - 1);
+
+                System.out.println("Selected: " + selected);
 
             }
         });
-        jToggleButton1 = myControlPlayer.getPlayButton();
 
-        jToggleButton2.addActionListener(new ActionListener() {
+        jButton2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                int selected = jList2.getSelectedIndex();
+                jList2.setSelectedIndex(selected + 1);
+                System.out.println("Selected: " + selected);
+            }
+        });
+        //jToggleButton1 = myControlPlayer.getPlayButton();
+
+        jButton7.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 if (myControlPlayer.getMediaPlayer().isMute()) {
+                    jButton7.setIcon(new ImageIcon("src//icons//unmute.png"));
                     myControlPlayer.getMediaPlayer().setMute(false);
                 } else {
                     myControlPlayer.getMediaPlayer().setMute(true);
+                    jButton7.setIcon(new ImageIcon("src//icons//muted.png"));
                 }
 
             }
         });
 
+        jButton5.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                myControlPlayer.getMediaPlayer().stop();
+                jToggleButton1.setSelected(false);
+                jToggleButton1.setSelectedIcon(new ImageIcon("src//icons//play"));
+            }
+        });
+
+        try {
+            songFile = ImageIO.read(noteCover);
+        } catch (IOException ex) {
+            Logger.getLogger(TriplePlayMusicPlayer.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        albumCover.setImage(songFile);
+        jPanel5.add(albumCover);
+
         setLayout(new BorderLayout());
         add(menuBar, BorderLayout.NORTH);
         add(BorderLayout.CENTER, jPanel1);
         add(BorderLayout.SOUTH, jPanel3);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                mySongsFile.writeFile(songsList);
+            }
+        });
 
     }
 
@@ -195,6 +239,7 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jButton4 = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
@@ -205,7 +250,8 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         jToggleButton1 = new javax.swing.JToggleButton();
         jButton2 = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        jToggleButton2 = new javax.swing.JToggleButton();
+        jButton5 = new javax.swing.JButton();
+        jButton7 = new javax.swing.JButton();
         jPanel4 = new javax.swing.JPanel();
         jLabel6 = new javax.swing.JLabel();
         jLabel7 = new javax.swing.JLabel();
@@ -218,6 +264,8 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         jLabel5 = new javax.swing.JLabel();
         jLabel11 = new javax.swing.JLabel();
         jLabel12 = new javax.swing.JLabel();
+
+        jButton4.setText("jButton4");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("TriplePlay Music Player");
@@ -289,9 +337,8 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         jPanel3.setBackground(new java.awt.Color(7, 62, 85));
 
         jToggleButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/play.png"))); // NOI18N
+        jToggleButton1.setSelected(true);
         jToggleButton1.setPreferredSize(new java.awt.Dimension(80, 80));
-        jToggleButton1.setRolloverSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/pause.png"))); // NOI18N
-        jToggleButton1.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/play.png"))); // NOI18N
         jToggleButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jToggleButton1ActionPerformed(evt);
@@ -304,58 +351,66 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/prev.png"))); // NOI18N
         jButton1.setPreferredSize(new java.awt.Dimension(58, 58));
 
-        jToggleButton2.setFont(new java.awt.Font("Lato Light", 0, 10)); // NOI18N
-        jToggleButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/unmute.png"))); // NOI18N
-        jToggleButton2.setMargin(new java.awt.Insets(2, 5, 2, 5));
-        jToggleButton2.setPreferredSize(new java.awt.Dimension(15, 15));
-        jToggleButton2.setRolloverSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/unmute.png"))); // NOI18N
-        jToggleButton2.setSelectedIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/muted.png"))); // NOI18N
+        jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/stop.png"))); // NOI18N
+        jButton5.setText("jButton5");
+        jButton5.setMaximumSize(new java.awt.Dimension(123, 99));
+        jButton5.setMinimumSize(new java.awt.Dimension(123, 99));
+        jButton5.setPreferredSize(new java.awt.Dimension(58, 58));
+
+        jButton7.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icons/unmute.png"))); // NOI18N
+        jButton7.setText("jButton7");
+        jButton7.setContentAreaFilled(false);
+        jButton7.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton7ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                .addGap(90, 90, 90)
+                .addGap(40, 40, 40)
                 .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(56, 56, 56)
+                .addGap(29, 29, 29)
                 .addComponent(jToggleButton1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(44, 44, 44)
+                .addGap(18, 18, 18)
                 .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(61, 61, 61)
-                .addComponent(jToggleButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                .addGap(50, 50, 50)
+                .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jButton7, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(26, 26, 26))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jToggleButton1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGroup(jPanel3Layout.createSequentialGroup()
-                            .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addGroup(jPanel3Layout.createSequentialGroup()
-                                    .addGap(20, 20, 20)
-                                    .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGroup(jPanel3Layout.createSequentialGroup()
-                                    .addGap(21, 21, 21)
-                                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addGap(13, 13, 13))
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel3Layout.createSequentialGroup()
-                            .addGap(12, 12, 12)
-                            .addComponent(jToggleButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(10, 10, 10))
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jToggleButton1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGap(25, 25, 25)
+                        .addComponent(jButton1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel3Layout.createSequentialGroup()
+                        .addGap(23, 23, 23)
+                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jButton7, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGap(20, 20, 20))
         );
 
         jPanel4.setBackground(new java.awt.Color(228, 240, 243));
 
         jLabel6.setFont(new java.awt.Font("Lato", 0, 10)); // NOI18N
         jLabel6.setForeground(new java.awt.Color(7, 62, 85));
-        jLabel6.setText("Lista de Reproducción");
+        jLabel6.setText("Playlist");
 
         jLabel7.setFont(new java.awt.Font("Lato", 0, 10)); // NOI18N
         jLabel7.setForeground(new java.awt.Color(7, 62, 85));
-        jLabel7.setText("Información de la Pista");
+        jLabel7.setText("Track Information");
 
         jList2.setBackground(new java.awt.Color(228, 240, 243));
         jList2.setFont(new java.awt.Font("Lato", 0, 14)); // NOI18N
@@ -384,15 +439,15 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
 
         jLabel8.setFont(new java.awt.Font("Lato", 1, 11)); // NOI18N
         jLabel8.setForeground(new java.awt.Color(7, 62, 85));
-        jLabel8.setText("Título:");
+        jLabel8.setText("Title:");
 
         jLabel9.setFont(new java.awt.Font("Lato", 1, 11)); // NOI18N
         jLabel9.setForeground(new java.awt.Color(7, 62, 85));
-        jLabel9.setText("Artista:");
+        jLabel9.setText("Artist");
 
         jLabel10.setFont(new java.awt.Font("Lato", 1, 11)); // NOI18N
         jLabel10.setForeground(new java.awt.Color(7, 62, 85));
-        jLabel10.setText("Álbum:");
+        jLabel10.setText("Album:");
 
         jLabel5.setText("AwesomeTitle");
 
@@ -424,7 +479,7 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
                             .addComponent(jLabel11, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(jPanel4Layout.createSequentialGroup()
-                .addGap(47, 47, 47)
+                .addGap(80, 80, 80)
                 .addComponent(jLabel6)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel7)
@@ -434,9 +489,9 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel7))
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel7)
+                    .addComponent(jLabel6))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel4Layout.createSequentialGroup()
@@ -491,6 +546,10 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
+    private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton7ActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -535,6 +594,9 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
+    private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton7;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
@@ -554,6 +616,5 @@ public class TriplePlayMusicPlayer extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel5;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JToggleButton jToggleButton1;
-    private javax.swing.JToggleButton jToggleButton2;
     // End of variables declaration//GEN-END:variables
 }
