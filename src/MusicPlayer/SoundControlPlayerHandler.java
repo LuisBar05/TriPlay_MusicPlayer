@@ -31,7 +31,7 @@ public class SoundControlPlayerHandler extends Application implements ActionList
     public void actionPerformed(ActionEvent ae) {
         if (!isPlaying) {
             if (mediaPlayer != null) {
-                mediaPlayer.play();
+                mediaPlayer.play();        
             }
             playButton.setSelected(true);
             playButton.setSelectedIcon(new ImageIcon("src//icons/pause.png"));
@@ -67,7 +67,7 @@ public class SoundControlPlayerHandler extends Application implements ActionList
             mediaPlayer = new MediaPlayer(media);
         } catch (MediaException me) {
             System.out.println("No se pudo encontrar el archivo");
-            JOptionPane.showMessageDialog(null, "File could not be found", "Ooops!", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "File not found :(\nmaybe was it moved or deleted?", "Ooops!", JOptionPane.WARNING_MESSAGE);
         }
 
     }
@@ -77,7 +77,5 @@ public class SoundControlPlayerHandler extends Application implements ActionList
     }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    public void start(Stage primaryStage) throws Exception {}
 }
