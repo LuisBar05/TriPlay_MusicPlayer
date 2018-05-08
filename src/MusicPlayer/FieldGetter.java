@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package MusicPlayer;
 
 import java.io.File;
@@ -20,7 +15,11 @@ import org.jaudiotagger.tag.images.Artwork;
 public class FieldGetter {
 
     private Tag tags;
-
+    /** 
+     * @author Renata (@BalbyReny)
+     */
+    private int duration_milis; //variable to store the duration of the song as it were another tag (for the jProgressBar thing)
+    
     public FieldGetter(File audioFile) throws CannotReadFile {
         setSongFile(audioFile);
     }
@@ -28,6 +27,10 @@ public class FieldGetter {
     public final void setSongFile(File songFile) throws CannotReadFile {
         try {
             AudioFile f = AudioFileIO.read(songFile);
+            /** 
+             * @author Renata (@BalbyReny)
+             */
+            duration_milis = f.getAudioHeader().getTrackLength(); //Problems with this, it doesn't really gets the track length in miliseconds and is suposed to ???
             tags = f.getTag();
         } catch (IOException | CannotReadException | InvalidAudioFrameException | ReadOnlyFileException | KeyNotFoundException | TagException ex) {
             throw new CannotReadFile(ex.getLocalizedMessage());
@@ -48,6 +51,10 @@ public class FieldGetter {
 
     public Artwork getArtwork() {
         return tags.getFirstArtwork();
+    }
+    
+    public int getDuration() {
+        return duration_milis; //feeling sad about this method, it really doesn't return anything, I don't want it to be useless ??
     }
 
 }
